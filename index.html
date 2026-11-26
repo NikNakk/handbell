@@ -34,7 +34,7 @@ const norm=v=>Math.hypot(...v);
 const vector=(o,keys)=>o&&keys.every(k=>typeof o[k]==='number'&&Number.isFinite(o[k]))?keys.map(k=>o[k]):null;
 const detector=new StrikeDetector();
 let audio=null,master=null,cache=new Map(),enabled=false,busy=false,count=0,watchdog=null,lastSample=0,flashTimer=null,activeSources=new Set(),requestedPermission=false;
-let recording=null,recordingPromise=null,recordingVersion=0;const voiceGains=new Map();
+let recording=null,recordingPromise=null,recordingVersion=0,recordingFailedAt=-Infinity;const voiceGains=new Map();
 const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 for(let m=60;m<=84;m++){const o=document.createElement('option');o.value=m;o.textContent=names[m%12]+(Math.floor(m/12)-1);$('note').append(o)}
 function readSetting(k,f){try{return localStorage.getItem('handbell.'+k)??f}catch{return f}}
@@ -63,9 +63,9 @@ function trimRecording(buffer){
   return result;
 }
 function loadRecording(){
-  if(!audio||$('sound').value!=='recorded')return Promise.resolve();
+  if(!audio)return Promise.resolve();if($('sound').value!=='recorded'){$('soundStatus').textContent='Modal synthesis · selectable pitch';return Promise.resolve();}
   if(recording)return Promise.resolve(recording);
-  if(recordingPromise)return recordingPromise;
+  if(recordingPromise)return recordingPromise;if(performance.now()-recordingFailedAt<15000)return Promise.resolve();
   const version=recordingVersion;
   $('soundStatus').textContent='Loading recorded bell…';
   recordingPromise=(async()=>{
@@ -76,7 +76,7 @@ function loadRecording(){
     const decoded=trimRecording(await audio.decodeAudioData(await response.arrayBuffer()));
     if(version!==recordingVersion)return;
     recording=decoded;$('soundStatus').textContent=custom?'Your recording is ready.':'Real bronze bell recording ready.';updateSettings();
-  })().catch(()=>{if(version===recordingVersion)$('soundStatus').textContent='Recording unavailable; using improved synthesis. You can import a recording below.';}).finally(()=>{if(version===recordingVersion)recordingPromise=null});
+  })().catch(()=>{if(version===recordingVersion){recordingFailedAt=performance.now();$('soundStatus').textContent='Recording unavailable; using improved synthesis. You can import a recording below.';}}).finally(()=>{if(version===recordingVersion)recordingPromise=null});
   return recordingPromise;
 }
 $('sampleFile').addEventListener('change',async e=>{
@@ -90,7 +90,7 @@ $('sampleFile').addEventListener('change',async e=>{
   }catch{$('soundStatus').textContent='Could not decode that audio file.'}
 });
 $('restoreSample').addEventListener('click',async()=>{
-  recordingVersion++;recording=null;recordingPromise=null;
+  recordingVersion++;recording=null;recordingPromise=null;recordingFailedAt=-Infinity;
   try{await (await caches.open(SAMPLE_CACHE)).delete(SAMPLE_KEY)}catch{}
   $('sound').value='recorded';save('sound','recorded');updateSettings();await unlockAudio();await loadRecording();
 });
@@ -143,7 +143,7 @@ $('enable').addEventListener('click',async()=>{
     if(!window.isSecureContext){showStatus('Motion requires an HTTPS website. Tap to ring still works.');return}
     if(!window.DeviceMotionEvent){showStatus('This browser does not expose motion sensors. Tap to ring.');return}
     if(permissionResult.status!=='fulfilled'||permissionResult.value!=='granted'){showStatus('Motion permission was not granted. Check browser settings or tap to ring.');return}
-    detector.reset();lastSample=0;enabled=true;$('enable').textContent='Stop motion';$('enable').classList.add('on');setBadge('Waiting for motion');showStatus('Waiting for sensor data…');window.addEventListener('devicemotion',onMotion,{passive:true});
+    bellBuffer(Number($('note').value),.4);bellBuffer(Number($('note').value),.85);detector.reset();lastSample=0;enabled=true;$('enable').textContent='Stop motion';$('enable').classList.add('on');setBadge('Waiting for motion');showStatus('Waiting for sensor data…');window.addEventListener('devicemotion',onMotion,{passive:true});
     const start=performance.now();watchdog=setInterval(()=>{if(document.hidden)return;const t=performance.now();if(t-(lastSample||start)>3000){setBadge('No sensor data');showStatus('No motion data received. Check motion permissions; try reopening in Safari or Chrome.');}else if(audio.state!=='running'){showStatus('Audio paused. Tap the bell to restore sound.');}},1000);
   }finally{busy=false;$('enable').disabled=false;}
 });
@@ -151,7 +151,7 @@ let holding=false,holdTimer=null,suppressTap=false;
 $('ring').addEventListener('pointerdown',()=>{suppressTap=false;holdTimer=setTimeout(()=>{holding=true;suppressTap=true;damp()},230)});
 function releaseHold(){clearTimeout(holdTimer);holding=false}
 for(const e of ['pointerup','pointercancel','pointerleave'])$('ring').addEventListener(e,releaseHold);
-$('ring').addEventListener('click',async()=>{if(suppressTap){suppressTap=false;return}try{await unlockAudio();await loadRecording();ring(.82);if(enabled&&lastSample)showStatus('Motion ready. Swing your wrist and let the clapper strike.')}catch{showStatus('Sound could not start in this browser.')}});
+$('ring').addEventListener('click',async()=>{if(suppressTap){suppressTap=false;return}try{await unlockAudio();ring(.82);if(enabled&&lastSample)showStatus('Motion ready. Swing your wrist and let the clapper strike.')}catch{showStatus('Sound could not start in this browser.')}});
 $('reset').addEventListener('click',()=>{count=0;$('count').textContent='0'});
 $('note').addEventListener('change',async()=>{try{await unlockAudio();ring(.68)}catch{}});
 document.addEventListener('visibilitychange',()=>{detector.reset();if(document.hidden){for(const s of activeSources){try{s.stop()}catch{}}}else if(enabled){lastSample=0;showStatus('Waiting for motion. Tap the bell if sound is paused.');}});
