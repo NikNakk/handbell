@@ -8,7 +8,7 @@ class StrikeDetector {
   reset(){
     this.q=[0,0];this.v=[0,0];this.lastTime=null;this.lastOmega=null;
     this.alpha=[0,0];this.lastStrike=-Infinity;this.lastSide=0;this.readyAt=null;
-    this.lastGesture=-Infinity;this.lastRaw=null;this.gravity=null;this.lastA=[0,0,0];this.contact=0;this.lastBoundary=null;
+    this.locked=false;this.lockDirection=null;this.quietSince=null;this.reversalSince=null;this.lastGesture=-Infinity;this.lastRaw=null;this.gravity=null;this.lastA=[0,0,0];this.contact=0;this.lastBoundary=null;
   }
   sample(event,now,sensitivity,mode='free',axis='both'){
     const raw=vector(event.accelerationIncludingGravity,['x','y','z']);
@@ -37,6 +37,31 @@ class StrikeDetector {
     if(this.lastBoundary!==limit){this.q=this.q.map(q=>clamp(q,-limit*.98,limit*.98));this.lastBoundary=limit;}
     const axes=mode==='tuned'?(axis==='side'?[0]:[1]):axis==='side'?[0]:axis==='forward'?[1]:[0,1];
     for(let i=0;i<2;i++)if(!axes.includes(i)){this.q[i]=0;this.v[i]=0;}
+    // One audible impact per wrist swing. Acceleration changes sign during
+    // braking, but angular velocity does not: do not rearm on clapper bounce.
+    const motion=omega.map((v,i)=>axes.includes(i)?v:0);
+    const speed=Math.hypot(...motion);
+    const acceleration=linear?Math.hypot(...linear):0;
+    const quiet=speed<.32&&acceleration<.8&&jerk<12;
+    if(this.locked){
+      if(quiet){
+        if(this.quietSince===null)this.quietSince=now;
+        if(now-this.quietSince>=64){
+          this.locked=false;this.lockDirection=null;this.lastGesture=-Infinity;
+          this.q=[0,0];this.v=[0,0];
+        }
+      }else this.quietSince=null;
+      if(this.lockDirection&&speed>.85){
+        const dot=motion[0]*this.lockDirection[0]+motion[1]*this.lockDirection[1];
+        if(dot<-.7*speed){
+          if(this.reversalSince===null)this.reversalSince=now;
+          if(now-this.reversalSince>=12&&now-this.lastStrike>=80){
+            this.locked=false;this.lockDirection=null;this.reversalSince=null;
+            this.q=[0,0];this.v=[0,0];
+          }
+        }else this.reversalSince=null;
+      }else this.reversalSince=null;
+    }
     let impact=0;
     const steps=Math.ceil(dt/.0025),h=dt/steps;
     for(let step=0;step<steps;step++){
@@ -61,9 +86,10 @@ class StrikeDetector {
           // A slow tilt or a clapper resting against the casting is not a strike.
           const side=Math.abs(n[0])>Math.abs(n[1])?(n[0]>0?1:-1):(n[1]>0?2:-2);
           const refractory=side===this.lastSide?85:35;
-          if(vn>.8-.25*s&&now-this.lastGesture<100&&now>=this.readyAt&&now-this.lastStrike>=refractory){
+          if(!this.locked&&vn>.8-.25*s&&now-this.lastGesture<100&&now>=this.readyAt&&now-this.lastStrike>=refractory){
             impact=Math.max(impact,clamp((vn/12)**.72,.13,1));
-            this.lastStrike=now;this.lastSide=side;
+            this.lastStrike=now;this.lastSide=side;this.locked=true;
+            this.lockDirection=speed>.45?motion.map(v=>v/speed):null;this.quietSince=null;this.reversalSince=null;
           }
         }
       }
