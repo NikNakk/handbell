@@ -8,7 +8,7 @@ class StrikeDetector {
   reset(){
     this.q=[0,0];this.v=[0,0];this.lastTime=null;this.lastOmega=null;
     this.alpha=[0,0];this.lastStrike=-Infinity;this.lastSide=0;this.readyAt=null;
-    this.gravity=null;this.lastA=[0,0,0];this.contact=0;this.lastBoundary=null;
+    this.lastGesture=-Infinity;this.lastRaw=null;this.gravity=null;this.lastA=[0,0,0];this.contact=0;this.lastBoundary=null;
   }
   sample(event,now,sensitivity,mode='free',axis='both'){
     const raw=vector(event.accelerationIncludingGravity,['x','y','z']);
@@ -18,16 +18,19 @@ class StrikeDetector {
     const rad=Math.PI/180;
     const omega=rates?[rates[0]*rad,-rates[1]*rad]:[0,0];
     if(this.lastTime===null||now-this.lastTime>180){
-      this.reset();this.lastTime=now;this.lastOmega=omega;this.readyAt=now+160;
+      this.reset();this.lastTime=now;this.lastOmega=omega;this.readyAt=now+48;
       return {strike:0,level:0,tilt:0,clapper:0};
     }
     const dt=clamp((now-this.lastTime)/1000,.004,.06);this.lastTime=now;
     const s=clamp(sensitivity,0,100)/100;
-    const limit=(mode==='tuned'?.42:.52)-.12*s;
-    const length=.085;const drive=.48+1.05*s;
-    const spring=mode==='tuned'?45:7;const damping=mode==='tuned'?5.8:2.6;
-    const blend=1-Math.exp(-dt/.018);
+    const limit=(mode==='tuned'?.15:.18)-.07*s;
+    const length=.05;const drive=1.5+1.5*s;
+    const spring=mode==='tuned'?52:14;const damping=mode==='tuned'?6.5:4.8;
+    const blend=1-Math.exp(-dt/.006);
     const apparent=raw||linear||[0,0,0];
+    const jerk=raw&&this.lastRaw?Math.hypot(...raw.map((a,i)=>(a-this.lastRaw[i])/dt)):0;
+    this.lastRaw=raw;
+    if(Math.hypot(...omega)>.65 || (linear&&Math.hypot(...linear)>1.7) || jerk>24)this.lastGesture=now;
     this.lastA=this.lastA.map((a,i)=>a+blend*(apparent[i]-a));
     this.alpha=this.alpha.map((a,i)=>a+blend*(clamp((omega[i]-this.lastOmega[i])/dt,-450,450)-a));
     this.lastOmega=omega;
@@ -58,7 +61,7 @@ class StrikeDetector {
           // A slow tilt or a clapper resting against the casting is not a strike.
           const side=Math.abs(n[0])>Math.abs(n[1])?(n[0]>0?1:-1):(n[1]>0?2:-2);
           const refractory=side===this.lastSide?85:35;
-          if(vn>1.45-.55*s&&now>=this.readyAt&&now-this.lastStrike>=refractory){
+          if(vn>.8-.25*s&&now-this.lastGesture<100&&now>=this.readyAt&&now-this.lastStrike>=refractory){
             impact=Math.max(impact,clamp((vn/12)**.72,.13,1));
             this.lastStrike=now;this.lastSide=side;
           }
