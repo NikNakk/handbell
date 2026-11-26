@@ -10,80 +10,124 @@
 </head>
 <body><main>
 <header><div><h1>Handbell</h1><p class="sub">A little bell in your pocket.</p></div><span id="badge" class="pill">Motion off</span></header>
-<div class="stage" id="stage"><div class="halo"></div><button id="ring" aria-label="Ring the bell"><svg id="bell" viewBox="0 0 200 246" aria-hidden="true"><defs><linearGradient id="metal" x1="0" x2="1"><stop offset="0" stop-color="#89602b"/><stop offset=".15" stop-color="#c89243"/><stop offset=".35" stop-color="#ffe6a0"/><stop offset=".52" stop-color="#e9bb67"/><stop offset=".82" stop-color="#b07935"/><stop offset="1" stop-color="#66451e"/></linearGradient><linearGradient id="handle"><stop stop-color="#36271e"/><stop offset=".4" stop-color="#75583d"/><stop offset="1" stop-color="#241c19"/></linearGradient><linearGradient id="rim" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#f8d98e"/><stop offset="1" stop-color="#936027"/></linearGradient></defs><path d="M92 70V53C92 45 79 43 79 26C79 11 87 4 100 4S121 11 121 26C121 43 108 45 108 53V70Z" fill="url(#handle)" stroke="#ae8b5b" stroke-width="1.3"/><rect x="83" y="57" width="34" height="19" rx="5" fill="url(#metal)"/><path d="M100 72C66 72 49 96 45 126L39 158C36 172 29 183 19 191L14 200Q100 219 186 200L181 191C171 183 164 172 161 158L155 126C151 96 134 72 100 72Z" fill="url(#metal)" stroke="#edc778" stroke-width="1"/><path d="M52 123Q100 113 148 123M37 172Q100 184 163 172" stroke="#fff3c7" stroke-opacity=".48" stroke-width="2" fill="none"/><path d="M17 192Q100 209 183 192L188 201Q100 223 12 201Z" fill="url(#rim)"/><ellipse cx="100" cy="204" rx="88" ry="14" fill="#382819" stroke="#f3cd79" stroke-width="2"/><ellipse cx="100" cy="204" rx="76" ry="9" fill="#211b19"/><path d="M100 202V221" stroke="#ac7c40" stroke-width="6" stroke-linecap="round"/><circle cx="100" cy="224" r="10" fill="url(#metal)"/></svg></button></div>
-<p class="taplabel">Tap the bell to hear it</p><p id="status" class="status" role="status" aria-live="polite">Enable motion, then flick your wrist gently to ring.</p>
+<div class="stage" id="stage"><div class="halo"></div><button id="ring" aria-label="Ring the bell"><svg id="bell" viewBox="0 0 200 246" aria-hidden="true"><defs><linearGradient id="metal" x1="0" x2="1"><stop offset="0" stop-color="#89602b"/><stop offset=".15" stop-color="#c89243"/><stop offset=".35" stop-color="#ffe6a0"/><stop offset=".52" stop-color="#e9bb67"/><stop offset=".82" stop-color="#b07935"/><stop offset="1" stop-color="#66451e"/></linearGradient><linearGradient id="handle"><stop stop-color="#36271e"/><stop offset=".4" stop-color="#75583d"/><stop offset="1" stop-color="#241c19"/></linearGradient><linearGradient id="rim" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#f8d98e"/><stop offset="1" stop-color="#936027"/></linearGradient></defs><path d="M92 70V53C92 45 79 43 79 26C79 11 87 4 100 4S121 11 121 26C121 43 108 45 108 53V70Z" fill="url(#handle)" stroke="#ae8b5b" stroke-width="1.3"/><rect x="83" y="57" width="34" height="19" rx="5" fill="url(#metal)"/><path d="M100 72C66 72 49 96 45 126L39 158C36 172 29 183 19 191L14 200Q100 219 186 200L181 191C171 183 164 172 161 158L155 126C151 96 134 72 100 72Z" fill="url(#metal)" stroke="#edc778" stroke-width="1"/><path d="M52 123Q100 113 148 123M37 172Q100 184 163 172" stroke="#fff3c7" stroke-opacity=".48" stroke-width="2" fill="none"/><path d="M17 192Q100 209 183 192L188 201Q100 223 12 201Z" fill="url(#rim)"/><ellipse cx="100" cy="204" rx="88" ry="14" fill="#382819" stroke="#f3cd79" stroke-width="2"/><ellipse cx="100" cy="204" rx="76" ry="9" fill="#211b19"/><g id="clapperGraphic" style="transform-origin:100px 202px"><path d="M100 202V221" stroke="#ac7c40" stroke-width="6" stroke-linecap="round"/><circle cx="100" cy="224" r="10" fill="url(#metal)"/></g></svg></button></div>
+<p class="taplabel">Tap to ring · hold to damp</p><p id="status" class="status" role="status" aria-live="polite">Enable motion, then swing your wrist as if holding a bell.</p>
 <button id="enable" class="primary">Enable motion &amp; sound</button>
 <section class="controls" aria-label="Bell settings">
+<div class="row"><label for="mode" class="labelrow">Bell type</label><select id="mode"><option value="free">Traditional</option><option value="tuned">Tuned handbell</option></select></div>
+<div class="row"><label for="axis" class="labelrow">Swing direction</label><select id="axis"><option value="both">Any direction</option><option value="forward">Forward/back</option><option value="side">Side to side</option></select></div>
+<div class="row"><label for="sound" class="labelrow">Sound</label><select id="sound"><option value="recorded">Real recording</option><option value="synth">Synthesised</option></select></div>
+<p class="sub" id="soundStatus" role="status">Loading recording when sound is enabled…</p>
+<details><summary class="sub">Use your own single-strike recording</summary><input id="sampleFile" type="file" accept="audio/*,.wav,.mp3,.m4a" style="max-width:100%;margin-top:8px"><p class="sub">Import a WAV or MP3 of one bell strike. Stored on this device for offline use. Recorded sound uses the sample's own pitch.</p><button class="link" id="restoreSample" type="button">Restore default sample</button></details>
 <div class="row"><label for="note" class="labelrow">Bell note</label><select id="note" aria-label="Bell note"></select></div>
-<div><div class="labelrow"><label for="sensitivity">Sensitivity</label><span class="value" id="sensValue">60%</span></div><input type="range" id="sensitivity" min="0" max="100" value="60"><div class="meter" role="meter" aria-label="Motion strength" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="motionMeter"><div id="meter"></div></div><div class="meterlabel"><span>Motion strength</span><span>Strike threshold</span></div></div>
+<div><div class="labelrow"><label for="sensitivity">Sensitivity</label><span class="value" id="sensValue">60%</span></div><input type="range" id="sensitivity" min="0" max="100" value="60"><div class="meter" role="meter" aria-label="Clapper position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="motionMeter"><div id="meter"></div></div><div class="meterlabel"><span>Motion strength</span><span>Bell wall</span></div></div>
 <div><div class="labelrow"><label for="volume">Volume</label><span class="value" id="volValue">75%</span></div><input type="range" id="volume" min="0" max="100" value="75"></div>
 <div class="row"><span class="sub"><span id="count">0</span> rings</span><button id="reset" class="link">Reset count</button></div></section>
 <details class="foot"><summary>Install &amp; help</summary><p><b>iPhone:</b> Open this site in Safari, tap Share, then Add to Home Screen (enable Open as Web App if offered).</p><p><b>Android:</b> Open in Chrome, open the menu, then Install app or Add to Home screen.</p><p>Motion requires HTTPS and permission. Keep the app open and hold your phone securely. If sound is muted, check media volume and silent mode. The app works offline after the first successful online load. Motion is processed only on your device.</p></details>
 </main>
+<script src="clapper.js"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const norm=v=>Math.hypot(...v);
 const vector=(o,keys)=>o&&keys.every(k=>typeof o[k]==='number'&&Number.isFinite(o[k]))?keys.map(k=>o[k]):null;
-// A hysteretic strike detector. Acceleration is in m/s², rotation in degrees/s.
-class StrikeDetector {
-  constructor(){this.reset()}
-  reset(){this.gravity=null;this.lastTime=null;this.lastStrike=-Infinity;this.armed=true;this.filtered=0;this.peak=0;this.readyAt=null;}
-  sample(event,now,sensitivity){
-    const dt=this.lastTime===null?16:clamp(now-this.lastTime,5,100);this.lastTime=now;
-    const raw=vector(event.accelerationIncludingGravity,['x','y','z']);
-    let a=vector(event.acceleration,['x','y','z']);
-    const r=vector(event.rotationRate,['alpha','beta','gamma']);
-    if(raw){if(!this.gravity)this.gravity=raw.slice();const k=1-Math.exp(-dt/220);this.gravity=this.gravity.map((v,i)=>v+k*(raw[i]-v));if(!a)a=raw.map((v,i)=>v-this.gravity[i]);}
-    if(!a&&!r)return null;
-    if(this.readyAt===null)this.readyAt=now+230;
-    // Normalize acceleration and angular velocity to comparable gesture strengths.
-    const strength=Math.max(a?norm(a)/9:0,r?norm(r)/330:0);
-    this.filtered+=(1-Math.exp(-dt/25))*(strength-this.filtered);
-    const threshold=1.6-1.25*clamp(sensitivity,0,100)/100;
-    let strike=0;
-    if(this.filtered<threshold*.58)this.armed=true;
-    if(this.armed&&this.filtered>=threshold&&now-this.lastStrike>=150&&now>=this.readyAt){
-      this.armed=false;this.lastStrike=now;strike=clamp(.34+.38*this.filtered/threshold,.35,1);
-    }
-    return {strike,level:this.filtered/threshold,tilt:r?clamp(r[1]*.045,-23,23):0};
-  }
-}
 const detector=new StrikeDetector();
 let audio=null,master=null,cache=new Map(),enabled=false,busy=false,count=0,watchdog=null,lastSample=0,flashTimer=null,activeSources=new Set(),requestedPermission=false;
+let recording=null,recordingPromise=null,recordingVersion=0;const voiceGains=new Map();
 const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 for(let m=60;m<=84;m++){const o=document.createElement('option');o.value=m;o.textContent=names[m%12]+(Math.floor(m/12)-1);$('note').append(o)}
 function readSetting(k,f){try{return localStorage.getItem('handbell.'+k)??f}catch{return f}}
 function save(k,v){try{localStorage.setItem('handbell.'+k,v)}catch{}}
-for(const [id,def] of [['note',72],['sensitivity',60],['volume',75]]){const el=$(id);el.value=readSetting(id,def);if(el.value==='')el.value=def;el.addEventListener('input',()=>{save(id,el.value);updateSettings()})}
-function updateSettings(){$('sensValue').textContent=$('sensitivity').value+'%';$('volValue').textContent=$('volume').value+'%';if(master)master.gain.setTargetAtTime(Number($('volume').value)/100*.8,audio.currentTime,.025)}updateSettings();
+for(const [id,def] of [['note',72],['sensitivity',65],['volume',75],['mode','free'],['axis','both'],['sound','recorded']]){const el=$(id);el.value=readSetting(id,def);if(el.value==='')el.value=def;el.addEventListener('input',()=>{save(id,el.value);updateSettings();if(id==='mode'||id==='axis')detector.reset();if(id==='sound'&&audio)loadRecording()})}
+function updateSettings(){$('sensValue').textContent=$('sensitivity').value+'%';$('volValue').textContent=$('volume').value+'%';$('note').disabled=$('sound').value==='recorded'&&!!recording;if(master)master.gain.setTargetAtTime(Number($('volume').value)/100*.8,audio.currentTime,.025)}updateSettings();
 function unlockAudio(){
   const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return Promise.reject(new Error('Web Audio unavailable'));
   if(!audio){audio=new AC();master=audio.createGain();master.gain.value=Number($('volume').value)/100*.8;const limiter=audio.createDynamicsCompressor();limiter.threshold.value=-10;limiter.knee.value=10;limiter.ratio.value=8;master.connect(limiter);limiter.connect(audio.destination);}
   // Both resume and an inaudible buffer start occur directly inside the user gesture.
-  const promise=audio.resume();const source=audio.createBufferSource();source.buffer=audio.createBuffer(1,1,audio.sampleRate);source.connect(master);source.start();return promise;
+  const promise=audio.resume();const source=audio.createBufferSource();source.buffer=audio.createBuffer(1,1,audio.sampleRate);source.connect(master);source.start();loadRecording();return promise;
 }
-function bellBuffer(midi){
-  if(cache.has(midi))return cache.get(midi);
-  const sr=audio.sampleRate,n=Math.floor(sr*3.4),buffer=audio.createBuffer(1,n,sr),data=buffer.getChannelData(0),f=440*2**((midi-69)/12);
+
+const DEFAULT_SAMPLE='./bell.mp3';
+const SAMPLE_CACHE='handbell-user-audio';
+const SAMPLE_KEY=new URL('./custom-bell-audio',location.href).href;
+function trimRecording(buffer){
+  // Trim leading silence without removing the attack. Keep the natural tail.
+  let peak=0;for(let c=0;c<buffer.numberOfChannels;c++){const a=buffer.getChannelData(c);for(let i=0;i<a.length;i++)peak=Math.max(peak,Math.abs(a[i]));}
+  let start=0,found=false;
+  for(let i=0;i<buffer.length&&!found;i++)for(let c=0;c<buffer.numberOfChannels;c++)if(Math.abs(buffer.getChannelData(c)[i])>peak*.012){start=Math.max(0,i-Math.round(buffer.sampleRate*.004));found=true;break;}
+  if(!found)throw new Error('Recording is silent');
+  const n=Math.min(buffer.length-start,buffer.sampleRate*8);
+  const result=audio.createBuffer(buffer.numberOfChannels,n,buffer.sampleRate);
+  for(let c=0;c<buffer.numberOfChannels;c++){const a=buffer.getChannelData(c),b=result.getChannelData(c);for(let i=0;i<n;i++)b[i]=a[start+i]*(.86/peak)*Math.min(1,(n-i)/(.035*buffer.sampleRate));}
+  return result;
+}
+function loadRecording(){
+  if(!audio||$('sound').value!=='recorded')return Promise.resolve();
+  if(recording)return Promise.resolve(recording);
+  if(recordingPromise)return recordingPromise;
+  const version=recordingVersion;
+  $('soundStatus').textContent='Loading recorded bell…';
+  recordingPromise=(async()=>{
+    let custom=null;try{custom=await (await caches.open(SAMPLE_CACHE)).match(SAMPLE_KEY)}catch{}
+    let response=custom;
+    if(!response)response=await fetch(DEFAULT_SAMPLE);
+    if(!response.ok)throw new Error('Sample unavailable');
+    const decoded=trimRecording(await audio.decodeAudioData(await response.arrayBuffer()));
+    if(version!==recordingVersion)return;
+    recording=decoded;$('soundStatus').textContent=custom?'Your recording is ready.':'Real bronze bell recording ready.';updateSettings();
+  })().catch(()=>{if(version===recordingVersion)$('soundStatus').textContent='Recording unavailable; using improved synthesis. You can import a recording below.';}).finally(()=>{if(version===recordingVersion)recordingPromise=null});
+  return recordingPromise;
+}
+$('sampleFile').addEventListener('change',async e=>{
+  const file=e.target.files[0];if(!file)return;
+  try{
+    await unlockAudio();const bytes=await file.arrayBuffer();
+    const decoded=trimRecording(await audio.decodeAudioData(bytes.slice(0)));
+    recordingVersion++;recordingPromise=null;recording=decoded;$('sound').value='recorded';save('sound','recorded');
+    let stored=true;try{await (await caches.open(SAMPLE_CACHE)).put(SAMPLE_KEY,new Response(bytes,{headers:{'Content-Type':file.type||'audio/wav'}}));}catch{stored=false}
+    $('soundStatus').textContent=stored?'Your recording is ready and stored offline.':'Your recording is ready for this session.';updateSettings();ring(.8);
+  }catch{$('soundStatus').textContent='Could not decode that audio file.'}
+});
+$('restoreSample').addEventListener('click',async()=>{
+  recordingVersion++;recording=null;recordingPromise=null;
+  try{await (await caches.open(SAMPLE_CACHE)).delete(SAMPLE_KEY)}catch{}
+  $('sound').value='recorded';save('sound','recorded');updateSettings();await unlockAudio();await loadRecording();
+});
+function damp(){
+  if(!audio)return;const t=audio.currentTime;
+  for(const [source,gain] of voiceGains){try{gain.gain.cancelScheduledValues(t);gain.gain.setTargetAtTime(0,t,.018);source.stop(t+.13)}catch{}}
+}
+
+function bellBuffer(midi,strength){
+  const hard=strength>.64;const key=midi+":"+hard+":"+$("mode").value;if(cache.has(key))return cache.get(key);
+  const sr=audio.sampleRate,n=Math.floor(sr*5.2),buffer=audio.createBuffer(1,n,sr),data=buffer.getChannelData(0),f=440*2**((midi-69)/12);
   // Original modal synthesis: tuned handbell fundamental and upper modes,
   // with a short metallic clapper transient and independently decaying partials.
-  const modes=[[1,.54,1.12],[2,.33,.69],[3,.12,.32],[4.16,.105,.24],[5.43,.065,.14],[6.79,.038,.085],[8.21,.024,.05],[10.34,.012,.027]];
-  for(const [ratio,amp,decay] of modes){if(f*ratio>sr*.45)continue;const w=2*Math.PI*f*ratio/sr,fall=Math.exp(-1/(sr*decay));let env=amp;for(let i=0;i<n;i++){data[i]+=Math.sin(w*i)*env;env*=fall;}}
+  const modes=$('mode').value==='tuned'?
+    [[1,.48,1.9],[2,.50,1.32],[3,.18,.78],[6,.09,.31],[4.23,.025,.16],[8.7,.021,.1]]:
+    [[1,.46,1.8],[1.012,.15,1.55],[2.03,.39,1.2],[2.055,.13,.94],[2.93,.24,.7],[3.86,.11,.36],[5.31,.12,.24],[6.42,.055,.18],[8.26,.034,.08]];
+  for(const [ratio,amp,decay] of modes){if(f*ratio>sr*.45)continue;const w=2*Math.PI*f*ratio/sr,fall=Math.exp(-1/(sr*decay));let env=amp*(hard?1:ratio>3?.38:1);for(let i=0;i<n;i++){data[i]+=Math.cos(w*i+ratio*.7)*env;env*=fall;}}
   let seed=48391,previous=0,max=0;
   for(let i=0;i<n;i++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;const noise=seed/2147483648-1;const attack=Math.min(1,i/(sr*.0015));const end=Math.min(1,(n-1-i)/(sr*.04));data[i]=(data[i]+(noise-previous)*.042*Math.exp(-i/(sr*.009)))*attack*end;previous=noise;max=Math.max(max,Math.abs(data[i]));}
-  for(let i=0;i<n;i++)data[i]*=.87/(max||1);cache.set(midi,buffer);return buffer;
+  for(let i=0;i<n;i++)data[i]*=.87/(max||1);cache.set(key,buffer);return buffer;
 }
 function ring(strength=.8){
   if(!audio||audio.state!=='running')return;
-  const source=audio.createBufferSource(),gain=audio.createGain();source.buffer=bellBuffer(Number($('note').value));gain.gain.value=clamp(strength,.2,1)*.8;source.connect(gain);gain.connect(master);activeSources.add(source);source.onended=()=>{activeSources.delete(source);source.disconnect();gain.disconnect()};source.start();
+  const source=audio.createBufferSource(),gain=audio.createGain(),tone=audio.createBiquadFilter();
+  const sampled=$('sound').value==='recorded'&&recording;
+  source.buffer=sampled?recording:bellBuffer(Number($('note').value),strength);
+  if(sampled)source.playbackRate.value=1+(Math.random()-.5)*.008;
+  gain.gain.value=Math.pow(clamp(strength,.13,1),1.25)*.92;
+  tone.type='lowpass';tone.frequency.value=2300+strength*14500;tone.Q.value=.45;
+  source.connect(tone);tone.connect(gain);gain.connect(master);activeSources.add(source);voiceGains.set(source,gain);
+  source.onended=()=>{activeSources.delete(source);voiceGains.delete(source);source.disconnect();tone.disconnect();gain.disconnect()};source.start();
   $('count').textContent=++count;const stage=$('stage');stage.classList.remove('flash');void stage.offsetWidth;stage.classList.add('flash');clearTimeout(flashTimer);flashTimer=setTimeout(()=>stage.classList.remove('flash'),570);
 }
 function showStatus(text){$('status').textContent=text}
 function setBadge(text,active=false){$('badge').textContent=text;$('badge').classList.toggle('active',active)}
-function onMotion(e){if(!enabled||document.hidden)return;const now=performance.now();const result=detector.sample(e,now,Number($('sensitivity').value));if(!result)return;const first=!lastSample;lastSample=now;if(first||$('badge').textContent!=='Motion on'){setBadge('Motion on',true);showStatus('Motion ready. Flick your wrist back and forth.');}
-  $('meter').style.width=clamp(result.level*72,0,100)+'%';$('motionMeter').setAttribute('aria-valuenow',Math.round(clamp(result.level*72,0,100)));$('bell').style.setProperty('--tilt',result.tilt+'deg');if(result.strike)ring(result.strike);
+function onMotion(e){if(!enabled||document.hidden)return;const now=performance.now();const result=detector.sample(e,now,Number($('sensitivity').value),$('mode').value,$('axis').value);if(!result)return;const first=!lastSample;lastSample=now;if(first||$('badge').textContent!=='Motion on'){setBadge('Motion on',true);showStatus('Motion ready. Swing your wrist and let the clapper strike.');}
+  $('meter').style.width=clamp(result.level*100,0,100)+'%';$('motionMeter').setAttribute('aria-valuenow',Math.round(clamp(result.level*100,0,100)));$('bell').style.setProperty('--tilt',result.tilt+'deg');$('clapperGraphic').style.transform='rotate('+result.clapper+'deg)';if(result.strike&&!holding)ring(result.strike);
 }
 function disableMotion(message='Motion off. Tap the bell to play manually.'){enabled=false;window.removeEventListener('devicemotion',onMotion);clearInterval(watchdog);lastSample=0;detector.reset();$('enable').textContent='Enable motion & sound';$('enable').classList.remove('on');setBadge('Motion off');$('meter').style.width='0%';$('motionMeter').setAttribute('aria-valuenow','0');$('bell').style.setProperty('--tilt','0deg');showStatus(message);}
 $('enable').addEventListener('click',async()=>{
@@ -103,7 +147,11 @@ $('enable').addEventListener('click',async()=>{
     const start=performance.now();watchdog=setInterval(()=>{if(document.hidden)return;const t=performance.now();if(t-(lastSample||start)>3000){setBadge('No sensor data');showStatus('No motion data received. Check motion permissions; try reopening in Safari or Chrome.');}else if(audio.state!=='running'){showStatus('Audio paused. Tap the bell to restore sound.');}},1000);
   }finally{busy=false;$('enable').disabled=false;}
 });
-$('ring').addEventListener('click',async()=>{try{await unlockAudio();ring(.82);if(enabled&&lastSample)showStatus('Motion ready. Flick your wrist back and forth.')}catch{showStatus('Sound could not start in this browser.')}});
+let holding=false,holdTimer=null,suppressTap=false;
+$('ring').addEventListener('pointerdown',()=>{suppressTap=false;holdTimer=setTimeout(()=>{holding=true;suppressTap=true;damp()},230)});
+function releaseHold(){clearTimeout(holdTimer);holding=false}
+for(const e of ['pointerup','pointercancel','pointerleave'])$('ring').addEventListener(e,releaseHold);
+$('ring').addEventListener('click',async()=>{if(suppressTap){suppressTap=false;return}try{await unlockAudio();await loadRecording();ring(.82);if(enabled&&lastSample)showStatus('Motion ready. Swing your wrist and let the clapper strike.')}catch{showStatus('Sound could not start in this browser.')}});
 $('reset').addEventListener('click',()=>{count=0;$('count').textContent='0'});
 $('note').addEventListener('change',async()=>{try{await unlockAudio();ring(.68)}catch{}});
 document.addEventListener('visibilitychange',()=>{detector.reset();if(document.hidden){for(const s of activeSources){try{s.stop()}catch{}}}else if(enabled){lastSample=0;showStatus('Waiting for motion. Tap the bell if sound is paused.');}});
