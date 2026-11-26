@@ -42,7 +42,7 @@ class StrikeDetector {
         // Effective acceleration includes gravity and translational inertia.
         // Relative angular acceleration also includes the rotation of the bell body.
         const force=drive*(-a*Math.cos(q)/length-this.alpha[i])+
-          along*Math.sin(q)/length-spring*q-damping*v+
+          -along*Math.sin(q)/length-spring*q-damping*v+
           omega[i]*omega[i]*Math.sin(q)*.3;
         this.v[i]=clamp(v+h*force,-45,45);
         this.q[i]+=h*this.v[i];
