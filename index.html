@@ -25,7 +25,7 @@
 <div class="row"><span class="sub"><span id="count">0</span> rings</span><button id="reset" class="link">Reset count</button></div></section>
 <details class="foot"><summary>Install &amp; help</summary><p><b>iPhone:</b> Open this site in Safari, tap Share, then Add to Home Screen (enable Open as Web App if offered).</p><p><b>Android:</b> Open in Chrome, open the menu, then Install app or Add to Home screen.</p><p>Motion requires HTTPS and permission. Keep the app open and hold your phone securely. If sound is muted, check media volume and silent mode. The app works offline after the first successful online load. Motion is processed only on your device.</p></details>
 </main>
-<script src="clapper.js"></script>
+<script src="clapper.js?v=4"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -40,10 +40,10 @@ for(let m=60;m<=84;m++){const o=document.createElement('option');o.value=m;o.tex
 function readSetting(k,f){try{return localStorage.getItem('handbell.'+k)??f}catch{return f}}
 function save(k,v){try{localStorage.setItem('handbell.'+k,v)}catch{}}
 for(const [id,def] of [['note',72],['sensitivity',65],['volume',75],['mode','free'],['axis','both'],['sound','recorded']]){const el=$(id);el.value=readSetting(id,def);if(el.value==='')el.value=def;el.addEventListener('input',()=>{save(id,el.value);updateSettings();if(id==='mode'||id==='axis')detector.reset();if(id==='sound'&&audio)loadRecording()})}
-function updateSettings(){$('sensValue').textContent=$('sensitivity').value+'%';$('volValue').textContent=$('volume').value+'%';$('note').disabled=$('sound').value==='recorded'&&!!recording;if(master)master.gain.setTargetAtTime(Number($('volume').value)/100*.8,audio.currentTime,.025)}updateSettings();
+function updateSettings(){$('sensValue').textContent=$('sensitivity').value+'%';$('volValue').textContent=$('volume').value+'%';$('note').disabled=$('sound').value==='recorded'&&!!recording;if(master)master.gain.setTargetAtTime(Number($('volume').value)/100*.55,audio.currentTime,.025)}updateSettings();
 function unlockAudio(){
   const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return Promise.reject(new Error('Web Audio unavailable'));
-  if(!audio){audio=new AC();master=audio.createGain();master.gain.value=Number($('volume').value)/100*.8;const limiter=audio.createDynamicsCompressor();limiter.threshold.value=-10;limiter.knee.value=10;limiter.ratio.value=8;master.connect(limiter);limiter.connect(audio.destination);}
+  if(!audio){audio=new AC({latencyHint:'interactive'});master=audio.createGain();master.gain.value=Number($('volume').value)/100*.55;master.connect(audio.destination);}
   // Both resume and an inaudible buffer start occur directly inside the user gesture.
   const promise=audio.resume();const source=audio.createBufferSource();source.buffer=audio.createBuffer(1,1,audio.sampleRate);source.connect(master);source.start();loadRecording();return promise;
 }
@@ -54,9 +54,19 @@ const SAMPLE_KEY=new URL('./custom-bell-audio',location.href).href;
 function trimRecording(buffer){
   // Trim leading silence without removing the attack. Keep the natural tail.
   let peak=0;for(let c=0;c<buffer.numberOfChannels;c++){const a=buffer.getChannelData(c);for(let i=0;i<a.length;i++)peak=Math.max(peak,Math.abs(a[i]));}
-  let start=0,found=false;
-  for(let i=0;i<buffer.length&&!found;i++)for(let c=0;c<buffer.numberOfChannels;c++)if(Math.abs(buffer.getChannelData(c)[i])>peak*.012){start=Math.max(0,i-Math.round(buffer.sampleRate*.004));found=true;break;}
-  if(!found)throw new Error('Recording is silent');
+  // Detect the actual attack using short RMS windows, rather than a lone noise spike.
+  if(peak<1e-6)throw new Error('Recording is silent');
+  const windowSize=Math.max(1,Math.round(buffer.sampleRate*.002));
+  const energies=[];let maxRms=0;
+  for(let i=0;i<buffer.length;i+=windowSize){
+    let sum=0,n=0;for(let c=0;c<buffer.numberOfChannels;c++){
+      const a=buffer.getChannelData(c);for(let j=i;j<Math.min(i+windowSize,a.length);j++){sum+=a[j]*a[j];n++;}
+    }
+    const rms=Math.sqrt(sum/Math.max(1,n));energies.push(rms);maxRms=Math.max(maxRms,rms);
+  }
+  let onset=energies.findIndex((v,i)=>v>maxRms*.075&&(energies[i+1]||0)>maxRms*.035);
+  if(onset<0)onset=energies.findIndex(v=>v>maxRms*.075);
+  const start=Math.max(0,onset*windowSize-Math.round(buffer.sampleRate*.002));
   const n=Math.min(buffer.length-start,buffer.sampleRate*8);
   const result=audio.createBuffer(buffer.numberOfChannels,n,buffer.sampleRate);
   for(let c=0;c<buffer.numberOfChannels;c++){const a=buffer.getChannelData(c),b=result.getChannelData(c);for(let i=0;i<n;i++)b[i]=a[start+i]*(.86/peak)*Math.min(1,(n-i)/(.035*buffer.sampleRate));}
@@ -114,6 +124,8 @@ function bellBuffer(midi,strength){
 }
 function ring(strength=.8){
   if(!audio||audio.state!=='running')return;
+  // Bound overlapping voices without a look-ahead compressor. Fade the oldest when necessary.
+  if(activeSources.size>=8){const old=activeSources.values().next().value;const oldGain=voiceGains.get(old);if(oldGain){oldGain.gain.setTargetAtTime(0,audio.currentTime,.008);try{old.stop(audio.currentTime+.05)}catch{}}}
   const source=audio.createBufferSource(),gain=audio.createGain(),tone=audio.createBiquadFilter();
   const sampled=$('sound').value==='recorded'&&recording;
   source.buffer=sampled?recording:bellBuffer(Number($('note').value),strength);
@@ -122,12 +134,12 @@ function ring(strength=.8){
   tone.type='lowpass';tone.frequency.value=2300+strength*14500;tone.Q.value=.45;
   source.connect(tone);tone.connect(gain);gain.connect(master);activeSources.add(source);voiceGains.set(source,gain);
   source.onended=()=>{activeSources.delete(source);voiceGains.delete(source);source.disconnect();tone.disconnect();gain.disconnect()};source.start();
-  $('count').textContent=++count;const stage=$('stage');stage.classList.remove('flash');void stage.offsetWidth;stage.classList.add('flash');clearTimeout(flashTimer);flashTimer=setTimeout(()=>stage.classList.remove('flash'),570);
+  $('count').textContent=++count;const stage=$('stage');stage.classList.add('flash');clearTimeout(flashTimer);flashTimer=setTimeout(()=>stage.classList.remove('flash'),250);
 }
 function showStatus(text){$('status').textContent=text}
 function setBadge(text,active=false){$('badge').textContent=text;$('badge').classList.toggle('active',active)}
-function onMotion(e){if(!enabled||document.hidden)return;const now=performance.now();const result=detector.sample(e,now,Number($('sensitivity').value),$('mode').value,$('axis').value);if(!result)return;const first=!lastSample;lastSample=now;if(first||$('badge').textContent!=='Motion on'){setBadge('Motion on',true);showStatus('Motion ready. Swing your wrist and let the clapper strike.');}
-  $('meter').style.width=clamp(result.level*100,0,100)+'%';$('motionMeter').setAttribute('aria-valuenow',Math.round(clamp(result.level*100,0,100)));$('bell').style.setProperty('--tilt',result.tilt+'deg');$('clapperGraphic').style.transform='rotate('+result.clapper+'deg)';if(result.strike&&!holding)ring(result.strike);
+function onMotion(e){if(!enabled||document.hidden)return;const now=performance.now();const result=detector.sample(e,now,Number($('sensitivity').value),$('mode').value,$('axis').value);if(!result)return;if(result.strike&&!holding)ring(result.strike);const first=!lastSample;lastSample=now;if(first||$('badge').textContent!=='Motion on'){setBadge('Motion on',true);showStatus('Motion ready. Swing your wrist and let the clapper strike.');}
+  $('meter').style.width=clamp(result.level*100,0,100)+'%';$('motionMeter').setAttribute('aria-valuenow',Math.round(clamp(result.level*100,0,100)));$('bell').style.setProperty('--tilt',result.tilt+'deg');$('clapperGraphic').style.transform='rotate('+result.clapper+'deg)';
 }
 function disableMotion(message='Motion off. Tap the bell to play manually.'){enabled=false;window.removeEventListener('devicemotion',onMotion);clearInterval(watchdog);lastSample=0;detector.reset();$('enable').textContent='Enable motion & sound';$('enable').classList.remove('on');setBadge('Motion off');$('meter').style.width='0%';$('motionMeter').setAttribute('aria-valuenow','0');$('bell').style.setProperty('--tilt','0deg');showStatus(message);}
 $('enable').addEventListener('click',async()=>{
