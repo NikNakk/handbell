@@ -48,7 +48,7 @@ function unlockAudio(){
   const promise=audio.resume();const source=audio.createBufferSource();source.buffer=audio.createBuffer(1,1,audio.sampleRate);source.connect(master);source.start();loadRecording();return promise;
 }
 
-const DEFAULT_SAMPLE='./bell.mp3';
+const DEFAULT_SAMPLE='./bell-single.mp3';
 const SAMPLE_CACHE='handbell-user-audio';
 const SAMPLE_KEY=new URL('./custom-bell-audio',location.href).href;
 function trimRecording(buffer){
@@ -75,7 +75,7 @@ function loadRecording(){
     if(!response.ok)throw new Error('Sample unavailable');
     const decoded=trimRecording(await audio.decodeAudioData(await response.arrayBuffer()));
     if(version!==recordingVersion)return;
-    recording=decoded;$('soundStatus').textContent=custom?'Your recording is ready.':'Real bronze bell recording ready.';updateSettings();
+    recording=decoded;$('soundStatus').textContent=custom?'Your recording is ready.':'Single-strike handbell recording ready.';updateSettings();
   })().catch(()=>{if(version===recordingVersion){recordingFailedAt=performance.now();$('soundStatus').textContent='Recording unavailable; using improved synthesis. You can import a recording below.';}}).finally(()=>{if(version===recordingVersion)recordingPromise=null});
   return recordingPromise;
 }
