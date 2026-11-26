@@ -30,7 +30,7 @@ To run on a desktop for a UI test: `python3 -m http.server 8000` then open `http
 
 ### Recorded audio
 
-The default recording is intended to be `bell.mp3`, **Bronze bell #2** by Pierre Sibanarco (BigSoundBank), [source and CC0 license](https://bigsoundbank.com/bronze-bell-2-s2704.html). The Import CC0 bell recording workflow fetches the original MP3 from the source and commits it to main. If the workflow is unavailable or fails, download the MP3 from the source page and place it in the repository root as `bell.mp3`. GitHub Pages may need a manual redeployment after a bot-generated commit. No external request is made from the app to the audio provider.
+The default recording is `bell-single.mp3`, **Bell #3** by Joseph Sardin (BigSoundBank), [source and CC0 license](https://bigsoundbank.com/bell-3-s2115.html). It is explicitly described by the source as one ring of a handbell. The earlier Bronze bell #2 recording had four strikes and is no longer used. The Import CC0 bell recording workflow downloads the replacement and commits it to main. If the workflow fails, download the MP3 from the source page and place it in the repository root as `bell-single.mp3`. GitHub Pages may need a manual redeployment after a bot-generated commit. No external request is made from the app to the audio provider.
 
 Until the recording is present, or if it cannot be decoded, the app uses improved modal synthesis and reports the fallback. The selected recording has not yet been auditioned in this app. For real chromatic handbell samples, see [radwoc's CC0 recordings](https://freesound.org/people/radwoc/sounds/370001/); these contain multiple ringing techniques and need to be edited into individual strikes before use.
 
