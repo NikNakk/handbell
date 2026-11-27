@@ -37,3 +37,10 @@ Until the recording is present, or if it cannot be decoded, the app uses improve
 ### Validation
 
 Simulated motion at approximately 60 Hz produces no strikes at rest or with slow tilt; sinusoidal forward and sideways wrist swings generate alternating impacts; the wrong axis is rejected in tuned mode. The physical parameters have not been calibrated on a real iPhone or Android device.
+
+
+## Motion diagnostics (v6)
+
+Enable motion and sound, then open Motion diagnostics. Choose a trial and press Start test. After a three-second countdown, the detector resets and records the trial automatically. Leave the app foregrounded and hold the phone securely. Follow the prompts for rest/slow tilt, five isolated forward flicks, five sideways flicks, five progressively harder flicks, eight alternating swings and natural ringing. Note the number of audible rings and any misses, duplicates, latency or changes in grip. Export all completed trials together with Download JSON or Share / Save JSON; send the file to the person investigating the detector. Trials are kept in memory until exported or the page is closed. No data is uploaded automatically and no microphone is accessed.
+
+The JSON includes raw browser motion readings (including missing values), exact detector input time relative to the trial start, browser event timestamps, per-sample settings, clapper position/velocity and rearm state, detector outputs, and separate audio scheduling events. The audio timestamps indicate scheduling, not measured speaker output. Detector version remains 5; diagnostics do not change its motion algorithm.
