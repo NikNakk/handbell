@@ -50,7 +50,7 @@ class HandbellDiagnostics {
   clearInterval(this.tick);clearTimeout(this.timer);
   const t=this.pending;this.pending=null;
   if(!t||!this.d.enabled()||document.hidden){this.status('Test cancelled: motion disabled or app hidden.');this.refresh();return}
-  this.d.detector.reset();
+  this.d.resetDetector();
   const start=performance.now();
   const a=this.d.audio();
   this.active={id:t.id,name:t.name,guide:t.guide,expected:t.expected,plannedSeconds:t.seconds,start,settings:this.d.settings(),screenAngle:screen.orientation?.angle??window.orientation??null,
@@ -88,7 +88,7 @@ class HandbellDiagnostics {
   const i=HAND_BELL_TRIALS.findIndex(x=>x.id===t.id);if(reason==='complete'&&i>=0&&i<HAND_BELL_TRIALS.length-1)this.select.value=HAND_BELL_TRIALS[i+1].id;
   this.refresh();
  }
- data(){return {schemaVersion:1,appVersion:6,detectorVersion:5,exportedAt:new Date().toISOString(),
+ data(){return {schemaVersion:1,appVersion:7,detectorVersion:7,exportedAt:new Date().toISOString(),
    device:{userAgent:navigator.userAgent,platform:navigator.platform,standalone:!!(navigator.standalone||matchMedia('(display-mode: standalone)').matches)},
    units:{t:'ms relative to beginning of trial',eventTimestamp:'browser event timeStamp, ms',acceleration:'m/s²',rotationRate:'degrees/s',q:'radians',v:'radians/s',audioTime:'AudioContext seconds'},
    deviceNotes:this.d.$('diagDevice').value, trials:this.trials};}
