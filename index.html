@@ -16,6 +16,7 @@
 <button id="enable" class="primary">Enable motion &amp; sound</button>
 <section class="controls" aria-label="Bell settings">
 <div class="row"><label for="mode" class="labelrow">Bell type</label><select id="mode"><option value="free">Traditional</option><option value="tuned">Tuned handbell</option></select></div>
+<div class="row"><label for="algorithm" class="labelrow">Strike detection</label><select id="algorithm"><option value="single">Adaptive · single flick</option><option value="alternating">Adaptive · alternating</option><option value="physics">Physical clapper (v5)</option></select></div>
 <div class="row"><label for="axis" class="labelrow">Swing direction</label><select id="axis"><option value="both">Any direction</option><option value="forward">Forward/back</option><option value="side">Side to side</option></select></div>
 <div class="row"><label for="sound" class="labelrow">Sound</label><select id="sound"><option value="recorded">Real recording</option><option value="synth">Synthesised</option></select></div>
 <p class="sub" id="soundStatus" role="status">Loading recording when sound is enabled…</p>
@@ -24,7 +25,7 @@
 <div><div class="labelrow"><label for="sensitivity">Sensitivity</label><span class="value" id="sensValue">60%</span></div><input type="range" id="sensitivity" min="0" max="100" value="60"><div class="meter" role="meter" aria-label="Clapper position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="motionMeter"><div id="meter"></div></div><div class="meterlabel"><span>Motion strength</span><span>Bell wall</span></div></div>
 <div><div class="labelrow"><label for="volume">Volume</label><span class="value" id="volValue">75%</span></div><input type="range" id="volume" min="0" max="100" value="75"></div>
 <div class="row"><span class="sub"><span id="count">0</span> rings</span><button id="reset" class="link">Reset count</button></div></section>
-<details id="diagnostics"><summary>Motion diagnostics <span class="sub">· v6</span></summary>
+<details id="diagnostics"><summary>Motion diagnostics <span class="sub">· v7</span></summary>
 <div class="diagBody"><p class="sub">Record guided motion tests and export one JSON file for analysis. Nothing is uploaded automatically. No microphone, camera or location access.</p>
 <label for="diagDevice" class="sub">Phone model / OS / grip (optional)</label><input id="diagDevice" placeholder="e.g. iPhone 17, right hand" autocomplete="off">
 <label for="diagTrial" class="sub">Choose a motion test</label><select id="diagTrial"></select><p id="diagGuide"></p>
@@ -36,21 +37,23 @@
 <details class="foot"><summary>Install &amp; help</summary><p><b>iPhone:</b> Open this site in Safari, tap Share, then Add to Home Screen (enable Open as Web App if offered).</p><p><b>Android:</b> Open in Chrome, open the menu, then Install app or Add to Home screen.</p><p>Motion requires HTTPS and permission. Keep the app open and hold your phone securely. If sound is muted, check media volume and silent mode. The app works offline after the first successful online load. Motion is processed only on your device.</p></details>
 </main>
 <script src="clapper.js?v=5"></script>
-<script src="diagnostics.js?v=6"></script>
+<script src="adaptive.js?v=7"></script>
+<script src="diagnostics.js?v=7"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const norm=v=>Math.hypot(...v);
 const vector=(o,keys)=>o&&keys.every(k=>typeof o[k]==='number'&&Number.isFinite(o[k]))?keys.map(k=>o[k]):null;
-const detector=new StrikeDetector();
+const detector=new StrikeDetector(),adaptive=new AdaptiveSwing();
+const resetDetector=()=>{detector.reset();adaptive.reset()};
 let audio=null,master=null,cache=new Map(),enabled=false,busy=false,count=0,watchdog=null,lastSample=0,flashTimer=null,activeSources=new Set(),requestedPermission=false;
 let recording=null,recordingPromise=null,recordingVersion=0,recordingFailedAt=-Infinity;const voiceGains=new Map();
 const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 for(let m=60;m<=84;m++){const o=document.createElement('option');o.value=m;o.textContent=names[m%12]+(Math.floor(m/12)-1);$('note').append(o)}
 function readSetting(k,f){try{return localStorage.getItem('handbell.'+k)??f}catch{return f}}
 function save(k,v){try{localStorage.setItem('handbell.'+k,v)}catch{}}
-for(const [id,def] of [['note',72],['sensitivity',65],['volume',75],['mode','free'],['axis','both'],['sound','recorded']]){const el=$(id);el.value=readSetting(id,def);if(el.value==='')el.value=def;el.addEventListener('input',()=>{save(id,el.value);updateSettings();if(id==='mode'||id==='axis'){detector.reset();diagnostics.event('detector-reset',{reason:'setting-change',settings:diagnosticSettings()});}if(id==='sound'&&audio)loadRecording()})}
+for(const [id,def] of [['note',72],['sensitivity',65],['volume',75],['mode','free'],['axis','both'],['algorithm','single'],['sound','recorded']]){const el=$(id);el.value=readSetting(id,def);if(el.value==='')el.value=def;el.addEventListener('input',()=>{save(id,el.value);updateSettings();if(id==='mode'||id==='axis'||id==='algorithm'){resetDetector();diagnostics.event('detector-reset',{reason:'setting-change',settings:diagnosticSettings()});}if(id==='sound'&&audio)loadRecording()})}
 function updateSettings(){$('sensValue').textContent=$('sensitivity').value+'%';$('volValue').textContent=$('volume').value+'%';$('note').disabled=$('sound').value==='recorded'&&!!recording;if(master)master.gain.setTargetAtTime(Number($('volume').value)/100*.55,audio.currentTime,.025)}updateSettings();
 function unlockAudio(){
   const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return Promise.reject(new Error('Web Audio unavailable'));
@@ -150,10 +153,10 @@ function ring(strength=.8,origin='manual'){
 }
 function showStatus(text){$('status').textContent=text}
 function setBadge(text,active=false){$('badge').textContent=text;$('badge').classList.toggle('active',active)}
-function onMotion(e){if(!enabled||document.hidden)return;const now=performance.now();const result=detector.sample(e,now,Number($('sensitivity').value),$('mode').value,$('axis').value);if(result?.strike&&!holding)ring(result.strike,'motion');if(diagnostics.active)diagnostics.capture(e,now,result,detector,diagnosticSettings());if(!result)return;const first=!lastSample;lastSample=now;if(first||$('badge').textContent!=='Motion on'){setBadge('Motion on',true);showStatus('Motion ready. Swing your wrist and let the clapper strike.');}
+function onMotion(e){if(!enabled||document.hidden)return;const now=performance.now();const result=detector.sample(e,now,Number($('sensitivity').value),$('mode').value,$('axis').value);const algorithm=$('algorithm').value;if(algorithm!=='physics'){const strike=adaptive.sample(e,now,Number($('sensitivity').value),algorithm,$('mode').value==='tuned'&&$('axis').value==='both'?'forward':$('axis').value);if(result){result.physicsStrike=result.strike;result.strike=strike||0;result.adaptive=adaptive.snapshot();}}if(result?.strike&&!holding)ring(result.strike,'motion');if(diagnostics.active)diagnostics.capture(e,now,result,detector,diagnosticSettings());if(!result)return;const first=!lastSample;lastSample=now;if(first||$('badge').textContent!=='Motion on'){setBadge('Motion on',true);showStatus('Motion ready. Swing your wrist and let the clapper strike.');}
   $('meter').style.width=clamp(result.level*100,0,100)+'%';$('motionMeter').setAttribute('aria-valuenow',Math.round(clamp(result.level*100,0,100)));$('bell').style.setProperty('--tilt',result.tilt+'deg');$('clapperGraphic').style.transform='rotate('+result.clapper+'deg)';
 }
-function disableMotion(message='Motion off. Tap the bell to play manually.'){diagnostics.stop('motion-disabled');enabled=false;window.removeEventListener('devicemotion',onMotion);clearInterval(watchdog);lastSample=0;detector.reset();$('enable').textContent='Enable motion & sound';$('enable').classList.remove('on');setBadge('Motion off');$('meter').style.width='0%';$('motionMeter').setAttribute('aria-valuenow','0');$('bell').style.setProperty('--tilt','0deg');showStatus(message);}
+function disableMotion(message='Motion off. Tap the bell to play manually.'){diagnostics.stop('motion-disabled');enabled=false;window.removeEventListener('devicemotion',onMotion);clearInterval(watchdog);lastSample=0;resetDetector();$('enable').textContent='Enable motion & sound';$('enable').classList.remove('on');setBadge('Motion off');$('meter').style.width='0%';$('motionMeter').setAttribute('aria-valuenow','0');$('bell').style.setProperty('--tilt','0deg');showStatus(message);}
 $('enable').addEventListener('click',async()=>{
   if(enabled){disableMotion();return}if(busy)return;busy=true;$('enable').disabled=true;
   // Start permission request and audio unlock before awaiting either, while activation is valid.
@@ -167,7 +170,7 @@ $('enable').addEventListener('click',async()=>{
     if(!window.isSecureContext){showStatus('Motion requires an HTTPS website. Tap to ring still works.');return}
     if(!window.DeviceMotionEvent){showStatus('This browser does not expose motion sensors. Tap to ring.');return}
     if(permissionResult.status!=='fulfilled'||permissionResult.value!=='granted'){showStatus('Motion permission was not granted. Check browser settings or tap to ring.');return}
-    bellBuffer(Number($('note').value),.4);bellBuffer(Number($('note').value),.85);detector.reset();lastSample=0;enabled=true;$('enable').textContent='Stop motion';$('enable').classList.add('on');setBadge('Waiting for motion');showStatus('Waiting for sensor data…');window.addEventListener('devicemotion',onMotion,{passive:true});
+    bellBuffer(Number($('note').value),.4);bellBuffer(Number($('note').value),.85);resetDetector();lastSample=0;enabled=true;$('enable').textContent='Stop motion';$('enable').classList.add('on');setBadge('Waiting for motion');showStatus('Waiting for sensor data…');window.addEventListener('devicemotion',onMotion,{passive:true});
     const start=performance.now();watchdog=setInterval(()=>{if(document.hidden)return;const t=performance.now();if(t-(lastSample||start)>3000){setBadge('No sensor data');showStatus('No motion data received. Check motion permissions; try reopening in Safari or Chrome.');}else if(audio.state!=='running'){showStatus('Audio paused. Tap the bell to restore sound.');}},1000);
   }finally{busy=false;$('enable').disabled=false;}
 });
@@ -178,8 +181,8 @@ for(const e of ['pointerup','pointercancel','pointerleave'])$('ring').addEventLi
 $('ring').addEventListener('click',async()=>{if(suppressTap){suppressTap=false;return}try{await unlockAudio();ring(.82);if(enabled&&lastSample)showStatus('Motion ready. Swing your wrist and let the clapper strike.')}catch{showStatus('Sound could not start in this browser.')}});
 $('reset').addEventListener('click',()=>{count=0;$('count').textContent='0'});
 $('note').addEventListener('change',async()=>{try{await unlockAudio();ring(.68)}catch{}});
-document.addEventListener('visibilitychange',()=>{if(document.hidden)diagnostics.stop('app-hidden');detector.reset();if(document.hidden){for(const s of activeSources){try{s.stop()}catch{}}}else if(enabled){lastSample=0;showStatus('Waiting for motion. Tap the bell if sound is paused.');}});
-function diagnosticSettings(){return {sensitivity:Number($('sensitivity').value),mode:$('mode').value,axis:$('axis').value,sound:$('sound').value,note:Number($('note').value),volume:Number($('volume').value),recordingReady:!!recording};}
-const diagnostics=new HandbellDiagnostics({$,detector,settings:diagnosticSettings,enabled:()=>enabled,audio:()=>audio,holding:()=>holding});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)diagnostics.stop('app-hidden');resetDetector();if(document.hidden){for(const s of activeSources){try{s.stop()}catch{}}}else if(enabled){lastSample=0;showStatus('Waiting for motion. Tap the bell if sound is paused.');}});
+function diagnosticSettings(){return {sensitivity:Number($('sensitivity').value),mode:$('mode').value,axis:$('axis').value,algorithm:$('algorithm').value,sound:$('sound').value,note:Number($('note').value),volume:Number($('volume').value),recordingReady:!!recording};}
+const diagnostics=new HandbellDiagnostics({$,detector,settings:diagnosticSettings,resetDetector,enabled:()=>enabled,audio:()=>audio,holding:()=>holding});
 if('serviceWorker' in navigator&&window.isSecureContext&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Offline setup unavailable:',e)));
 </script></body></html>
