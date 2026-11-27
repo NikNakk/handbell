@@ -6,6 +6,7 @@
 <title>Handbell</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><link rel="icon" href="icon-192.png">
 <style>
 :root{color-scheme:dark;--bg:#191c29;--card:#242836;--ink:#f4efdf;--muted:#aeb2bf;--gold:#f4c776;--line:#3a3e4a}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 18%,#34313c 0%,var(--bg) 56%);color:var(--ink);font:16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;min-height:100dvh}main{max-width:480px;margin:auto;padding: max(20px,env(safe-area-inset-top)) 22px max(24px,env(safe-area-inset-bottom))}header{display:flex;align-items:center;justify-content:space-between;gap:12px}h1{font-size:29px;letter-spacing:-1.2px;line-height:1.2;margin:0}p{margin:0}.sub{color:var(--muted);font-size:14px;margin-top:4px}.pill{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:5px 10px;white-space:nowrap}.pill.active{color:#b6e8bb;border-color:#54765a}.stage{position:relative;display:grid;place-items:center;min-height:252px;margin:18px 0 5px}.halo{position:absolute;width:218px;height:218px;border:1px solid #ffffff0e;border-radius:50%;box-shadow:0 0 0 20px #ffffff03,0 0 0 40px #ffffff02;pointer-events:none}.stage.flash .halo{animation:halo .56s ease-out}@keyframes halo{0%{box-shadow:0 0 0 0 #eab85e60,0 0 30px #f9b74d40}100%{box-shadow:0 0 0 48px #eab85e00,0 0 0 #f9b74d00}}#ring{border:none;background:none;box-shadow:none;padding:0;cursor:pointer;width:100%;height:254px;display:grid;place-items:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation}#bell{width:184px;max-width:60vw;height:auto;overflow:visible;filter:drop-shadow(0 16px 14px #0006);transform-origin:50% 18%;transform:rotate(var(--tilt,0deg));transition:transform .07s linear}.stage.flash #bell{animation:swing .48s ease-out}@keyframes swing{0%{transform:rotate(var(--tilt,0deg))}20%{transform:rotate(calc(var(--tilt,0deg) + 20deg))}48%{transform:rotate(calc(var(--tilt,0deg) - 13deg))}72%{transform:rotate(calc(var(--tilt,0deg) + 6deg))}100%{transform:rotate(var(--tilt,0deg))}}.taplabel{text-align:center;color:var(--muted);font-size:13px;margin-top:-9px}.status{text-align:center;min-height:48px;font-size:14px;color:var(--muted);padding:10px 0}.primary{display:block;width:100%;background:var(--gold);color:#2b2318;font:700 17px/1.25 system-ui;border:0;border-radius:15px;padding:15px;cursor:pointer;min-height:52px}.primary.on{background:var(--card);color:var(--gold);border:1px solid #7a6343}.primary:disabled{opacity:.65}.controls{margin-top:16px;padding:16px 18px;border:1px solid var(--line);background:#242836e8;border-radius:18px;display:grid;gap:16px}.labelrow{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;font-weight:600}.value{font-weight:400;color:var(--gold);font-variant-numeric:tabular-nums}input[type=range]{width:100%;margin:7px 0 0;accent-color:var(--gold);height:22px;touch-action:pan-y}select{background:#191c29;border:1px solid var(--line);border-radius:9px;color:var(--ink);font:inherit;padding:8px 12px;min-width:135px}.meter{height:5px;border-radius:4px;background:#151823;overflow:hidden;margin-top:8px}.meter div{height:100%;width:0;background:var(--gold);border-radius:4px;transition:width .06s linear}.meterlabel{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:4px}.foot{color:var(--muted);font-size:12px;text-align:center;margin-top:18px}.foot summary{cursor:pointer;color:var(--ink);padding:8px}.foot p{margin-top:8px;text-align:left}.row{display:flex;justify-content:space-between;align-items:center;gap:12px}.link{background:transparent;border:0;color:var(--muted);font:inherit;text-decoration:underline;cursor:pointer;padding:8px}button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid #ffe4a7;outline-offset:4px}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+#diagnostics{margin-top:16px;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:var(--card)}#diagnostics summary{cursor:pointer;font-weight:650}#diagnostics .diagBody{display:grid;gap:12px;margin-top:14px}#diagnostics select,#diagnostics textarea,#diagnostics input{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit}#diagnostics button{border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);font:inherit;padding:10px;cursor:pointer}#diagnostics button:disabled{opacity:.4}#diagnostics .diagResult{display:grid;gap:8px;padding:10px 0;border-top:1px solid var(--line)}#diagnostics .diagButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px}#diagStatus{color:var(--gold);min-height:42px}
 </style>
 </head>
 <body><main>
@@ -23,9 +24,19 @@
 <div><div class="labelrow"><label for="sensitivity">Sensitivity</label><span class="value" id="sensValue">60%</span></div><input type="range" id="sensitivity" min="0" max="100" value="60"><div class="meter" role="meter" aria-label="Clapper position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="motionMeter"><div id="meter"></div></div><div class="meterlabel"><span>Motion strength</span><span>Bell wall</span></div></div>
 <div><div class="labelrow"><label for="volume">Volume</label><span class="value" id="volValue">75%</span></div><input type="range" id="volume" min="0" max="100" value="75"></div>
 <div class="row"><span class="sub"><span id="count">0</span> rings</span><button id="reset" class="link">Reset count</button></div></section>
+<details id="diagnostics"><summary>Motion diagnostics <span class="sub">· v6</span></summary>
+<div class="diagBody"><p class="sub">Record guided motion tests and export one JSON file for analysis. Nothing is uploaded automatically. No microphone, camera or location access.</p>
+<label for="diagDevice" class="sub">Phone model / OS / grip (optional)</label><input id="diagDevice" placeholder="e.g. iPhone 17, right hand" autocomplete="off">
+<label for="diagTrial" class="sub">Choose a motion test</label><select id="diagTrial"></select><p id="diagGuide"></p>
+<div class="diagButtons"><button id="diagStart">Start test</button><button id="diagStop" disabled>Stop test</button></div>
+<p id="diagStatus" role="status" aria-live="polite">Enable motion, choose a test, then start.</p>
+<p class="sub" id="diagTotal">0 trials recorded</p><div id="diagResults"></div>
+<div class="diagButtons"><button id="diagExport" disabled>Download JSON</button><button id="diagShare" disabled>Share / Save JSON</button></div>
+<button id="diagClear" disabled>Clear recorded trials</button><p class="sub">Keep this app open until you have exported your trials. Recorded tests are held in memory.</p></div></details>
 <details class="foot"><summary>Install &amp; help</summary><p><b>iPhone:</b> Open this site in Safari, tap Share, then Add to Home Screen (enable Open as Web App if offered).</p><p><b>Android:</b> Open in Chrome, open the menu, then Install app or Add to Home screen.</p><p>Motion requires HTTPS and permission. Keep the app open and hold your phone securely. If sound is muted, check media volume and silent mode. The app works offline after the first successful online load. Motion is processed only on your device.</p></details>
 </main>
 <script src="clapper.js?v=5"></script>
+<script src="diagnostics.js?v=6"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -39,7 +50,7 @@ const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 for(let m=60;m<=84;m++){const o=document.createElement('option');o.value=m;o.textContent=names[m%12]+(Math.floor(m/12)-1);$('note').append(o)}
 function readSetting(k,f){try{return localStorage.getItem('handbell.'+k)??f}catch{return f}}
 function save(k,v){try{localStorage.setItem('handbell.'+k,v)}catch{}}
-for(const [id,def] of [['note',72],['sensitivity',65],['volume',75],['mode','free'],['axis','both'],['sound','recorded']]){const el=$(id);el.value=readSetting(id,def);if(el.value==='')el.value=def;el.addEventListener('input',()=>{save(id,el.value);updateSettings();if(id==='mode'||id==='axis')detector.reset();if(id==='sound'&&audio)loadRecording()})}
+for(const [id,def] of [['note',72],['sensitivity',65],['volume',75],['mode','free'],['axis','both'],['sound','recorded']]){const el=$(id);el.value=readSetting(id,def);if(el.value==='')el.value=def;el.addEventListener('input',()=>{save(id,el.value);updateSettings();if(id==='mode'||id==='axis'){detector.reset();diagnostics.event('detector-reset',{reason:'setting-change',settings:diagnosticSettings()});}if(id==='sound'&&audio)loadRecording()})}
 function updateSettings(){$('sensValue').textContent=$('sensitivity').value+'%';$('volValue').textContent=$('volume').value+'%';$('note').disabled=$('sound').value==='recorded'&&!!recording;if(master)master.gain.setTargetAtTime(Number($('volume').value)/100*.55,audio.currentTime,.025)}updateSettings();
 function unlockAudio(){
   const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return Promise.reject(new Error('Web Audio unavailable'));
@@ -105,7 +116,7 @@ $('restoreSample').addEventListener('click',async()=>{
   $('sound').value='recorded';save('sound','recorded');updateSettings();await unlockAudio();await loadRecording();
 });
 function damp(){
-  if(!audio)return;const t=audio.currentTime;
+  diagnostics.event('damp');if(!audio)return;const t=audio.currentTime;
   for(const [source,gain] of voiceGains){try{gain.gain.cancelScheduledValues(t);gain.gain.setTargetAtTime(0,t,.018);source.stop(t+.13)}catch{}}
 }
 
@@ -122,8 +133,8 @@ function bellBuffer(midi,strength){
   for(let i=0;i<n;i++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;const noise=seed/2147483648-1;const attack=Math.min(1,i/(sr*.0015));const end=Math.min(1,(n-1-i)/(sr*.04));data[i]=(data[i]+(noise-previous)*.042*Math.exp(-i/(sr*.009)))*attack*end;previous=noise;max=Math.max(max,Math.abs(data[i]));}
   for(let i=0;i<n;i++)data[i]*=.87/(max||1);cache.set(key,buffer);return buffer;
 }
-function ring(strength=.8){
-  if(!audio||audio.state!=='running')return;
+function ring(strength=.8,origin='manual'){
+  if(!audio||audio.state!=='running'){diagnostics.event('audio-skipped',{origin,strength,state:audio?.state??null});return;}
   // Bound overlapping voices without a look-ahead compressor. Fade the oldest when necessary.
   if(activeSources.size>=8){const old=activeSources.values().next().value;const oldGain=voiceGains.get(old);if(oldGain){oldGain.gain.setTargetAtTime(0,audio.currentTime,.008);try{old.stop(audio.currentTime+.05)}catch{}}}
   const source=audio.createBufferSource(),gain=audio.createGain(),tone=audio.createBiquadFilter();
@@ -133,15 +144,16 @@ function ring(strength=.8){
   gain.gain.value=Math.pow(clamp(strength,.13,1),1.25)*.92;
   tone.type='lowpass';tone.frequency.value=2300+strength*14500;tone.Q.value=.45;
   source.connect(tone);tone.connect(gain);gain.connect(master);activeSources.add(source);voiceGains.set(source,gain);
-  source.onended=()=>{activeSources.delete(source);voiceGains.delete(source);source.disconnect();tone.disconnect();gain.disconnect()};source.start();
+  source.onended=()=>{activeSources.delete(source);voiceGains.delete(source);source.disconnect();tone.disconnect();gain.disconnect()};const audioTime=audio.currentTime;source.start();
+  diagnostics.event('audio-start',{origin,strength,sampled:!!sampled,audioTime,playbackRate:source.playbackRate.value,count:count+1,activeVoices:activeSources.size});
   $('count').textContent=++count;const stage=$('stage');stage.classList.add('flash');clearTimeout(flashTimer);flashTimer=setTimeout(()=>stage.classList.remove('flash'),250);
 }
 function showStatus(text){$('status').textContent=text}
 function setBadge(text,active=false){$('badge').textContent=text;$('badge').classList.toggle('active',active)}
-function onMotion(e){if(!enabled||document.hidden)return;const now=performance.now();const result=detector.sample(e,now,Number($('sensitivity').value),$('mode').value,$('axis').value);if(!result)return;if(result.strike&&!holding)ring(result.strike);const first=!lastSample;lastSample=now;if(first||$('badge').textContent!=='Motion on'){setBadge('Motion on',true);showStatus('Motion ready. Swing your wrist and let the clapper strike.');}
+function onMotion(e){if(!enabled||document.hidden)return;const now=performance.now();const result=detector.sample(e,now,Number($('sensitivity').value),$('mode').value,$('axis').value);if(result?.strike&&!holding)ring(result.strike,'motion');if(diagnostics.active)diagnostics.capture(e,now,result,detector,diagnosticSettings());if(!result)return;const first=!lastSample;lastSample=now;if(first||$('badge').textContent!=='Motion on'){setBadge('Motion on',true);showStatus('Motion ready. Swing your wrist and let the clapper strike.');}
   $('meter').style.width=clamp(result.level*100,0,100)+'%';$('motionMeter').setAttribute('aria-valuenow',Math.round(clamp(result.level*100,0,100)));$('bell').style.setProperty('--tilt',result.tilt+'deg');$('clapperGraphic').style.transform='rotate('+result.clapper+'deg)';
 }
-function disableMotion(message='Motion off. Tap the bell to play manually.'){enabled=false;window.removeEventListener('devicemotion',onMotion);clearInterval(watchdog);lastSample=0;detector.reset();$('enable').textContent='Enable motion & sound';$('enable').classList.remove('on');setBadge('Motion off');$('meter').style.width='0%';$('motionMeter').setAttribute('aria-valuenow','0');$('bell').style.setProperty('--tilt','0deg');showStatus(message);}
+function disableMotion(message='Motion off. Tap the bell to play manually.'){diagnostics.stop('motion-disabled');enabled=false;window.removeEventListener('devicemotion',onMotion);clearInterval(watchdog);lastSample=0;detector.reset();$('enable').textContent='Enable motion & sound';$('enable').classList.remove('on');setBadge('Motion off');$('meter').style.width='0%';$('motionMeter').setAttribute('aria-valuenow','0');$('bell').style.setProperty('--tilt','0deg');showStatus(message);}
 $('enable').addEventListener('click',async()=>{
   if(enabled){disableMotion();return}if(busy)return;busy=true;$('enable').disabled=true;
   // Start permission request and audio unlock before awaiting either, while activation is valid.
@@ -166,6 +178,8 @@ for(const e of ['pointerup','pointercancel','pointerleave'])$('ring').addEventLi
 $('ring').addEventListener('click',async()=>{if(suppressTap){suppressTap=false;return}try{await unlockAudio();ring(.82);if(enabled&&lastSample)showStatus('Motion ready. Swing your wrist and let the clapper strike.')}catch{showStatus('Sound could not start in this browser.')}});
 $('reset').addEventListener('click',()=>{count=0;$('count').textContent='0'});
 $('note').addEventListener('change',async()=>{try{await unlockAudio();ring(.68)}catch{}});
-document.addEventListener('visibilitychange',()=>{detector.reset();if(document.hidden){for(const s of activeSources){try{s.stop()}catch{}}}else if(enabled){lastSample=0;showStatus('Waiting for motion. Tap the bell if sound is paused.');}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)diagnostics.stop('app-hidden');detector.reset();if(document.hidden){for(const s of activeSources){try{s.stop()}catch{}}}else if(enabled){lastSample=0;showStatus('Waiting for motion. Tap the bell if sound is paused.');}});
+function diagnosticSettings(){return {sensitivity:Number($('sensitivity').value),mode:$('mode').value,axis:$('axis').value,sound:$('sound').value,note:Number($('note').value),volume:Number($('volume').value),recordingReady:!!recording};}
+const diagnostics=new HandbellDiagnostics({$,detector,settings:diagnosticSettings,enabled:()=>enabled,audio:()=>audio,holding:()=>holding});
 if('serviceWorker' in navigator&&window.isSecureContext&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Offline setup unavailable:',e)));
 </script></body></html>
